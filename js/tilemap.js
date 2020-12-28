@@ -43,13 +43,40 @@ function TileMap() {
       }
   }
 
-  this.getAdjacentTilesPos = function(xCenter, yCenter) {
+  this.getAdjacentTilesPos = function(xCenter, yCenter, includeSelf = false, sides = false) { // Get relative adjacent tiles (directly in contact)
     var tiles = [];
-    tiles.push(new PIXI.Point(xCenter, yCenter - 1));
-    tiles.push(new PIXI.Point(xCenter - 1, yCenter));
-    tiles.push(new PIXI.Point(xCenter, yCenter + 1));
-    tiles.push(new PIXI.Point(xCenter + 1, yCenter));
+    // if (sides) tiles.push(new PIXI.Point(xCenter - 1, yCenter - 1));
+    // tiles.push(new PIXI.Point(xCenter, yCenter - 1));
+    // tiles.push(new PIXI.Point(xCenter - 1, yCenter));
+    // if (includeSelf) tiles.push(new PIXI.Point(xCenter, yCenter));
+    // tiles.push(new PIXI.Point(xCenter, yCenter + 1));
+    // tiles.push(new PIXI.Point(xCenter + 1, yCenter));
+    for (var y = -1; y <= 1; y++) {
+      for (var x = -1; x <= 1; x++) {
+        if (x == 0 && y == 0 && !includeSelf) continue;
+        if (sides) {
+          if (Math.abs(x) == 1 && Math.abs(y)) {
+            tiles.push(new PIXI.Point(null, null));
+          } else {
+            tiles.push(new PIXI.Point(xCenter + x, yCenter + y));
+          }
+        } else {
+          if (Math.abs(x) == 1 && Math.abs(y)) continue;
+          tiles.push(new PIXI.Point(xCenter + x, yCenter + y));
+        }
+      }
+    }
     return tiles;
+  }
+
+  this.getSurroundingTilesPos = function(xCenter, yCenter, includeSelf = false) { // Get relative surrounding tiles
+    var tiles = []
+    for (var y = -1; y <= 1; y++) {
+      for (var x = -1; x <= 1; x++) {
+        if (x == 0 && y == 0 && !includeSelf) continue;
+        tiles.push(new PIXI.Point(xCenter + x, yCenter + y));
+      }
+    }
   }
 
   this.getTile = function(x, y) {
@@ -79,11 +106,12 @@ function TileMap() {
   }
 
   this.getFreeAdjacentTilesPos = function(xCenter, yCenter) {
-    var adjacentTiles = this.getAdjacentTilesPos(xCenter, yCenter);
+    var adjacentTiles = this.getAdjacentTilesPos(xCenter, yCenter, false, false);
     var freeAdjacentTiles = [];
     for (var t = 0; t < adjacentTiles.length; t++) {
       var tile = adjacentTiles[t];
-      if (this.getTileID(tile.x, tile.y) == null || this.getTileID(tile.x, tile.y) > 14) {
+      var tileID = this.getTileID(tile.x, tile.y);
+      if (tileID == null || tileID == "?" || tileID == "$" || tileID == "%") {
         freeAdjacentTiles.push(tile);
       }
     }
@@ -97,7 +125,8 @@ function TileMap() {
     for (var t = 0; t < adjacentTiles.length; t++) {
       var tile = adjacentTiles[t];
       if (tile.x == backwardTile.x && tile.y == backwardTile.y) continue;
-      if (this.getTileID(tile.x, tile.y) == null || this.getTileID(tile.x, tile.y) > 14) {
+      var tileID = this.getTileID(tile.x, tile.y);
+      if (tileID == null || tileID == "?" || tileID == "$" || tileID == "%") {
         freeAdjacentTiles.push(tile);
       }
     }
@@ -119,31 +148,63 @@ function TileMap() {
     return new PIXI.Point(Math.floor((x - xOff)/(gridSize.x/this.xCells)), Math.floor((y - yOff)/(gridSize.y/this.yCells)));
   }
 
-  this.loadMap = function(mpID) {
+  this.loadMap = function(mpID) { // Load map into the game from maps.js
     var mp = MAPS[mpID];
+
     this.mapID = mpID;
     this.xCells = mp["size_x"];
     this.yCells = mp["size_y"];
     this.remainingPts = 0;
-    while(this.tileContainer.children[0]) { this.tileContainer.removeChild(this.tileContainer.children[0]); }
+
+    while(this.tileContainer.children[0]) { this.tileContainer.removeChild(this.tileContainer.children[0]); } // Erase data from previous map
     var gridSize = this.getGridSize();
     var xOff = (window.innerWidth - gridSize.x)/2;
     var yOff = (window.innerHeight - gridSize.y)/2;
+
     for (var c = 0; c < mp["sprites"].length; c++) {
       var x = c % (this.xCells);
       var y = Math.floor(c / (this.xCells));
       var type = String(mp["sprites"][c]);
-      if (type == "16") { type = "pts"; this.remainingPts++; }
-      if (type == "17") { type = "big_pts"; this.remainingPts++; }
-      if (type == "15") { type = "gateway"; }
-      if (type!="0") {
+
+      switch (type) {
+        case "?": // Gateway tile
+          type = "gateway";
+          break;
+        case "%": // Credit tile
+          type = "pts"; this.remainingPts++;
+          break;
+        case "$": // Big credit tile
+          type = "big_pts"; this.remainingPts++;
+          break;
+        case "#": // Wall tile
+          // **AUTO TILE**
+          var adjTilePos = this.getAdjacentTilesPos(x, y, true, true);
+          //console.log(adjTilePos)
+          var adjTiles = [];
+          for (var t = 0; t < adjTilePos.length; t++) {
+            var cAdj = adjTilePos[t].y * this.xCells + adjTilePos[t].x; // Convert coordinates to index value
+            var adjTile = String(mp["sprites"][cAdj]) || "0";
+            if (adjTilePos[t].x == null && adjTilePos[t].y == null) adjTile = "0"; // Out of boundary measure
+            if (adjTilePos[t].x < 0 || adjTilePos[t].y < 0) adjTile = "0"; // Out of boundary measure
+            if (adjTilePos[t].x >= this.xCells || adjTilePos[t].y >= this.yCells) adjTile = "0"; // Out of boundary measure
+            if (adjTile != "#" && adjTile != "?") adjTile = "0"; // If not a wall, consider it as a void tile
+            if (adjTile == "?") adjTile = "#" // Gateway
+            adjTiles.push(adjTile);
+          }
+          type = getAutoTileValue(adjTiles, "wall");
+          break;
+        default:
+          continue;
+      }
+
+      if (type!="0") { // Tile "0" being empty
         var key = String(x) + "," + String(y);
         var sprite = new PIXI.Sprite.from("assets/textures/" + type + ".png");
         sprite.position = new PIXI.Point(x*gridSize.x/this.xCells + xOff, y*gridSize.y/this.yCells + yOff);
         sprite.width = gridSize.x/this.xCells;
         sprite.height = gridSize.y/this.yCells;
         sprite.name = key;
-        sprite.type = mp["sprites"][c];
+        sprite.type = String(mp["sprites"][c]);
         this.tileContainer.addChild(sprite);
       }
     }
