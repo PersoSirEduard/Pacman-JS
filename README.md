@@ -7,7 +7,7 @@ Recreation of the Pacman game into JavaScript
 
 - ~~Auto tiling support~~
 - Fruit bonus items
-- Leveling system
+- Leveling system & UI
 - Mobile support
 - Optimisation
 - Multiplayer support
