@@ -116,5 +116,5 @@ function deadMode(map) {
 function getOutMode(map) {
   var gridSize = map.getGridSize();
   var halfTile = new PIXI.Point(gridSize.x/map.xCells/2, gridSize.y/map.yCells/2);
-  return addVectors(map.mapToWorld(MAPS[map.mapID]["get_out_pos"][0], MAPS[map.mapID]["get_out_pos"][1]), halfTile);
+  return addVectors(map.mapToWorld(MAPS[map.mapID]["gateway_pos"][0], MAPS[map.mapID]["gateway_pos"][1]), halfTile);
 }
