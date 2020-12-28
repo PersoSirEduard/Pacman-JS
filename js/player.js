@@ -77,11 +77,14 @@ function Player(type, map) {
     var currentTilePosCenter = addVectors(currentTilePos, halfTile);
     var forwardTile = new PIXI.Point(currentTile.x + this.direction.x, currentTile.y + this.direction.y);
     var centerForwardTile = addVectors(this.tileMap.mapToWorld(forwardTile.x, forwardTile.y), halfTile);
-    if (this.tileMap.getTile(forwardTile.x, forwardTile.y) == null || this.tileMap.getTileID(forwardTile.x, forwardTile.y) > 15 || distanceBetweenPoints(this.sprite.position, centerForwardTile) > gridSize.x/this.tileMap.xCells + 2) {
+    var currentTileID = this.tileMap.getTileID(currentTile.x, currentTile.y);
+    var forwardTileID = this.tileMap.getTileID(forwardTile.x, forwardTile.y);
+
+    if ((forwardTileID != "#" && forwardTileID != "?") || distanceBetweenPoints(this.sprite.position, centerForwardTile) > gridSize.x/this.tileMap.xCells + 2) {
       this.sprite.position = lerpVectors(this.sprite.position, centerForwardTile, this.speed*delta*getVectorMag(this.direction));
-      if (distanceBetweenPoints(currentTilePosCenter, this.sprite.position) < halfTile.x && (this.tileMap.getTileID(currentTile.x, currentTile.y) == 16 || this.tileMap.getTileID(currentTile.x, currentTile.y) == 17)) {
+      if (distanceBetweenPoints(currentTilePosCenter, this.sprite.position) < halfTile.x && (currentTileID == "$" || currentTileID == "%")) {
         this.tileMap.remainingPts--;
-        if (this.tileMap.getTileID(currentTile.x, currentTile.y) == 17) { //BIG_PTS & TRIGGER FRIGHT
+        if (currentTileID == "$") { //BIG_PTS & TRIGGER FRIGHT
           lastedTime = 0;
           targetMode = 2;
           for (var g = 0; g < ghosts.length; g++) { ghosts[g].frightened = true; }

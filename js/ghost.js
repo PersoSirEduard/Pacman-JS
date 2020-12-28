@@ -115,7 +115,7 @@ function Ghost(type, map) {
     var currentTile = this.tileMap.worldToMap(this.sprite.position.x, this.sprite.position.y);
     if (currentTile.x != this.tilePos.x || currentTile.y != this.tilePos.y) this.canTurn = true;
     this.tilePos = currentTile;
-    if (this.tileMap.getTileID(currentTile.x, currentTile.y) == 15) {
+    if (this.tileMap.getTileID(currentTile.x, currentTile.y) == "?") {
       if (this.canGoThroughGate == true) this.imprisoned = !this.imprisoned;
       this.canGoThroughGate = false;
       this.alive = true;
@@ -138,21 +138,25 @@ function Ghost(type, map) {
 
     if (distanceBetweenPoints(forwardTilePosCenter, this.sprite.position) < gridSize.x/this.tileMap.xCells && this.canTurn) {
       this.canTurn = false;
+      var forwardTileID = this.tileMap.getTileID(forwardTile.x, forwardTile.y);
+      console.log()
       if (freeAdjTiles.length == 1) {
         this.direction.x *= -1;
         this.direction.y *= -1;
-      } else if (this.tileMap.getTileID(forwardTile.x, forwardTile.y) != null && this.tileMap.getTileID(forwardTile.x, forwardTile.y) < 16) {
+      } else if (forwardTileID == "#" || forwardTileID == "?") {
         this.sprite.position = currentTilePosCenter;
         if (this.direction.x != 0) {
           this.direction.x = 0;
           var upTilePos = addVectors(currentTilePosCenter, new PIXI.Point(0, -gridSize.y/this.tileMap.yCells));
           var downTilePos = addVectors(currentTilePosCenter, new PIXI.Point(0, gridSize.y/this.tileMap.yCells));
           if (distanceBetweenPoints(destination, upTilePos) < distanceBetweenPoints(destination, downTilePos)) {
-            if (this.tileMap.getTileID(currentTile.x, currentTile.y - 1) == null || this.tileMap.getTileID(currentTile.x, currentTile.y - 1) > 15) {
+            var tileDirID = this.tileMap.getTileID(currentTile.x, currentTile.y - 1)
+            if (tileDirID != "#" && tileDirID != "?") {
               this.direction.y = -1;
             } else { this.direction.y = 1; }
           } else {
-            if (this.tileMap.getTileID(currentTile.x, currentTile.y + 1) == null || this.tileMap.getTileID(currentTile.x, currentTile.y + 1) > 15) {
+            var tileDirID = this.tileMap.getTileID(currentTile.x, currentTile.y + 1)
+            if (tileDirID != "#" && tileDirID != "?") {
               this.direction.y = 1;
             } else { this.direction.y = -1; }
           }
@@ -161,11 +165,13 @@ function Ghost(type, map) {
           var leftTilePos = addVectors(currentTilePosCenter, new PIXI.Point(-gridSize.x/this.tileMap.xCells, 0));
           var rightTilePos = addVectors(currentTilePosCenter, new PIXI.Point(gridSize.x/this.tileMap.xCells, 0));
           if (distanceBetweenPoints(destination, leftTilePos) < distanceBetweenPoints(destination, rightTilePos)) {
-            if (this.tileMap.getTileID(currentTile.x - 1, currentTile.y) == null || this.tileMap.getTileID(currentTile.x - 1, currentTile.y) > 15) {
+            var tileDirID = this.tileMap.getTileID(currentTile.x - 1, currentTile.y)
+            if (tileDirID != "#" && tileDirID != "?") {
               this.direction.x = -1;
             } else { this.direction.x = 1; }
           } else {
-            if (this.tileMap.getTileID(currentTile.x + 1, currentTile.y) == null || this.tileMap.getTileID(currentTile.x + 1, currentTile.y) > 15) {
+            var tileDirID = this.tileMap.getTileID(currentTile.x + 1, currentTile.y)
+            if (tileDirID != "#" && tileDirID != "?") {
               this.direction.x = 1;
             } else { this.direction.x = -1; }
           }
@@ -177,7 +183,7 @@ function Ghost(type, map) {
           var adjTile = freeAdjTiles[t];
           var backTile = subVectors(currentTile, this.direction);
           if (adjTile.x == backTile.x && adjTile.y == backTile.y) continue;
-          if (this.canGoThroughGate == false && this.tileMap.getTileID(adjTile.x, adjTile.y) == 15) continue;
+          if (this.canGoThroughGate == false && this.tileMap.getTileID(adjTile.x, adjTile.y) == "?") continue;
           var dir = subVectors(adjTile, currentTile);
           if (this.direction.x == -dir.x && this.direction.y == -dir.y) continue;
           var tilePosCenter = addVectors(this.tileMap.mapToWorld(adjTile.x, adjTile.y), halfTile);
